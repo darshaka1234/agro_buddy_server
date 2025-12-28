@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:16.11-alpine3.23
+    container_name: agro-buddy-db
+    env_file:
+      - .env  
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
