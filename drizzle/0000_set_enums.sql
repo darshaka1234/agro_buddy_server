@@ -1,5 +1,4 @@
-
-
+-- Custom SQL migration file, put your code below! --
 CREATE TYPE quantity_unit AS ENUM (
   'kg', 'g', 'litre', 'ml', 'piece', 'dozen', 'box', 'bag', 'carton', 'ton'
 );
@@ -20,6 +19,3 @@ CREATE TYPE auction_status AS ENUM (
   'pending', 'active', 'completed', 'cancelled'
 );
 
-CREATE TYPE role AS ENUM (
-  'guest', 'farmer', 'buyer', 'admin'
-);

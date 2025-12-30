@@ -5,22 +5,15 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1767087608941,
+      "when": 1767119596563,
       "tag": "0000_set_enums",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1767087789030,
-      "tag": "0001_init_schemas",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1767088017430,
-      "tag": "0002_increase_driver_contact_limit",
+      "when": 1767119683872,
+      "tag": "0001_init",
       "breakpoints": true
     }
   ]

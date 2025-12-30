@@ -6,8 +6,11 @@ import {
   text,
   timestamp,
   varchar,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { user } from '../user/user.schema';
+import { createInsertSchema, createUpdateSchema } from 'drizzle-zod';
+import z from 'zod';
 
 const quantityUnitEnum = pgEnum('quantity_unit', [
   'kg',
@@ -23,8 +26,8 @@ const quantityUnitEnum = pgEnum('quantity_unit', [
 ]);
 
 export const product = pgTable('products', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  farmerId: integer('farmer_id')
+  id: uuid('id').primaryKey().defaultRandom(),
+  farmerId: text('farmer_id')
     .notNull()
     .references(() => user.id),
   name: varchar('name', { length: 255 }).notNull(),
@@ -38,3 +41,9 @@ export const product = pgTable('products', {
   updatedAt: timestamp('updated_at').defaultNow(),
   deletedAt: timestamp('deleted_at'),
 });
+
+export const productInsertSchema = createInsertSchema(product);
+export const productUpdateSchema = createUpdateSchema(product);
+
+export type createProductDto = z.infer<typeof productInsertSchema>;
+export type updateProductDto = z.infer<typeof productUpdateSchema>;

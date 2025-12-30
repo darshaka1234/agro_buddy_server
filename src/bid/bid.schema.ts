@@ -4,16 +4,17 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { auction } from '../auction/auction.schema';
 import { user } from '../user/user.schema';
 
 export const bid = pgTable('bids', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  auctionId: integer('auction_id')
+  id: uuid('id').primaryKey().defaultRandom(),
+  auctionId: uuid('auction_id')
     .notNull()
     .references(() => auction.id),
-  buyerId: integer('buyer_id')
+  buyerId: text('buyer_id')
     .notNull()
     .references(() => user.id),
   amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),

@@ -5,6 +5,7 @@ import {
   timestamp,
   pgEnum,
   text,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { user } from '../user/user.schema';
 
@@ -19,8 +20,8 @@ const vehicleTypeEnum = pgEnum('vehicle_type', [
 ]);
 
 export const vehicle = pgTable('vehicles', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  ownerId: integer('owner_id')
+  id: uuid('id').primaryKey().defaultRandom(),
+  ownerId: text('owner_id')
     .notNull()
     .references(() => user.id),
   licensePlate: varchar('license_plate', { length: 50 }).notNull().unique(),

@@ -1,1 +1,0 @@
-ALTER TABLE "vehicles" ALTER COLUMN "driver_contact" SET DATA TYPE varchar(100);

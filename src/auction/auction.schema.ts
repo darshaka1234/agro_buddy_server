@@ -5,9 +5,11 @@ import {
   pgTable,
   text,
   timestamp,
+  uuid,
 } from 'drizzle-orm/pg-core';
 import { product } from '../product/product.schema';
 import { bid } from '../bid/bid.schema';
+import { user } from '../user/user.schema';
 
 const auctionStatusEnum = pgEnum('auction_status', [
   'pending',
@@ -17,10 +19,11 @@ const auctionStatusEnum = pgEnum('auction_status', [
 ]);
 
 export const auction = pgTable('auctions', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  id: uuid('id').primaryKey().defaultRandom(),
   basePrice: numeric('base_price', { precision: 10, scale: 2 }).notNull(),
   currentPrice: numeric('current_price', { precision: 10, scale: 2 }),
-  winningBidId: integer('winning_bid_id').references(() => bid.id),
+  winningBidId: uuid('winning_bid_id').references(() => bid.id),
+  farmerId: text('farmer_id').references(() => user.id),
   startTime: timestamp('start_time').notNull(),
   endTime: timestamp('end_time'),
   createdAt: timestamp('created_at').defaultNow(),
@@ -28,11 +31,11 @@ export const auction = pgTable('auctions', {
 });
 
 export const auctionItem = pgTable('auction_items', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  auctionId: integer('auction_id')
+  id: uuid('id').primaryKey().defaultRandom(),
+  auctionId: uuid('auction_id')
     .notNull()
     .references(() => auction.id),
-  productId: integer('product_id')
+  productId: uuid('product_id')
     .notNull()
     .references(() => product.id),
   status: auctionStatusEnum('status').default('pending'),

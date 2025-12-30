@@ -1,15 +1,9 @@
-import {
-  integer,
-  pgTable,
-  text,
-  timestamp,
-  varchar,
-} from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { user } from '../user/user.schema';
 
 export const profile = pgTable('profiles', {
-  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
-  userId: integer('user_id')
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id')
     .notNull()
     .references(() => user.id),
   firstName: varchar('first_name', { length: 100 }).notNull(),

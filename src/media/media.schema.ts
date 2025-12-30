@@ -6,6 +6,7 @@ import {
   pgEnum,
   index,
   varchar,
+  uuid,
 } from 'drizzle-orm/pg-core';
 
 export const mediaResourceTypeEnum = pgEnum('media_resource_type', [
@@ -18,9 +19,9 @@ export const mediaResourceTypeEnum = pgEnum('media_resource_type', [
 export const media = pgTable(
   'media',
   {
-    id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+    id: uuid('id').primaryKey().defaultRandom(),
     resourceType: mediaResourceTypeEnum('resource_type').notNull(),
-    resourceId: integer('resource_id').notNull(),
+    resourceId: uuid('resource_id').notNull(),
     url: text('url').notNull(),
     storageKey: text('storage_key').notNull(),
     fileName: varchar('file_name', { length: 255 }),

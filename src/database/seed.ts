@@ -12,204 +12,205 @@ const pool = new Pool({
 });
 const db = drizzle(pool, { schema }) as NodePgDatabase<typeof schema>;
 
+// Delete in reverse order of dependencies
+async function cleanDB() {
+  console.log('Clearing existing data...');
+  await db.delete(schema.media);
+  await db.delete(schema.bid);
+  await db.delete(schema.auctionItem);
+  await db.delete(schema.auction);
+  await db.delete(schema.deliveryItem);
+  await db.delete(schema.delivery);
+  await db.delete(schema.vehicle);
+  await db.delete(schema.product);
+  await db.delete(schema.profile);
+  await db.delete(schema.userRole);
+  await db.delete(schema.user);
+  await db.delete(schema.role);
+}
+
 async function main() {
-  //user
-  const userIds = await Promise.all(
-    Array.from({ length: 50 }).map(async () => {
-      const user = await db
+  await cleanDB();
+
+  console.log('Seeding roles...');
+  const roles = await db
+    .insert(schema.role)
+    .values([
+      { name: 'admin' },
+      { name: 'farmer' },
+      { name: 'buyer' },
+      { name: 'driver' },
+    ])
+    .returning();
+
+  console.log('Seeding users...');
+  const users = await Promise.all(
+    Array.from({ length: 10 }).map(() =>
+      db
         .insert(schema.user)
         .values({
+          id: faker.string.uuid(),
           email: faker.internet.email(),
-          password: faker.internet.password(),
-          role: 'guest',
+          name: faker.person.fullName(),
+          emailVerified: true,
         })
-        .returning();
-      return user[0].id;
-    }),
+        .returning()
+        .then((res) => res[0]),
+    ),
   );
 
-  //profile
-  await Promise.all(
-    userIds.map(async (userId) => {
-      await db.insert(schema.profile).values({
-        userId,
-        firstName: faker.person.firstName(),
-        lastName: faker.person.lastName(),
-        bio: faker.lorem.sentence(),
-        profileImageUrl: faker.image.avatar(),
-        coverImageUrl: faker.image.avatar(),
-      });
-    }),
-  );
+  console.log('Assigning roles and creating profiles...');
+  for (const user of users) {
+    // Assign a random role
+    const randomRole = roles[Math.floor(Math.random() * roles.length)];
+    await db.insert(schema.userRole).values({
+      userId: user.id,
+      roleId: randomRole.id,
+    });
 
-  //vehicle
-  const vehicleIds = await Promise.all(
-    Array.from({ length: 20 }).map(async () => {
-      const ownerId = faker.helpers.arrayElement(userIds);
-      const vehicle = await db
-        .insert(schema.vehicle)
-        .values({
-          ownerId,
-          licensePlate: faker.vehicle.vrm(),
-          type: faker.helpers.arrayElement([
-            'bike',
-            'van',
-            'truck',
-            'tractor',
-            'car',
-          ]),
-          model: faker.vehicle.model(),
-          capacity: faker.number.int({ min: 100, max: 5000 }),
-          driverName: faker.person.fullName(),
-          driverContact: faker.phone.number(),
-          imageUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
-        })
-        .returning();
-      return vehicle[0].id;
-    }),
-  );
+    // Create profile
+    await db.insert(schema.profile).values({
+      userId: user.id,
+      firstName: user.name.split(' ')[0],
+      lastName: user.name.split(' ')[1] || '',
+      bio: faker.lorem.sentence(),
+    });
+  }
 
-  //product
-  const productIds = await Promise.all(
-    Array.from({ length: 100 }).map(async () => {
-      const farmerId = faker.helpers.arrayElement(userIds);
-      const product = await db
+  const farmerUsers = users.slice(0, 5);
+  const buyerUsers = users.slice(5, 8);
+  const driverUsers = users.slice(8, 10);
+
+  console.log('Seeding products...');
+  const products = await Promise.all(
+    farmerUsers.map((farmer) =>
+      db
         .insert(schema.product)
         .values({
-          farmerId,
+          farmerId: farmer.id,
           name: faker.commerce.productName(),
           description: faker.commerce.productDescription(),
-          price: faker.commerce.price({ min: 1, max: 5000, dec: 2 }),
-          unitType: faker.helpers.arrayElement([
-            'kg',
-            'g',
-            'litre',
-            'ml',
-            'piece',
-            'dozen',
-            'box',
-            'bag',
-            'carton',
-            'ton',
-          ]),
-          imageUrl: 'https://cdn-icons-png.flaticon.com/512/149/149071.png',
+          price: faker.commerce.price(),
+          unitType: 'kg',
         })
-        .returning();
-      return product[0].id;
-    }),
+        .returning()
+        .then((res) => res[0]),
+    ),
   );
 
-  //product gallery
-  await Promise.all(
-    productIds.map(async (productId) => {
-      await db.insert(schema.media).values({
-        resourceType: 'product_gallery',
-        resourceId: productId,
-        url: faker.image.urlLoremFlickr({ category: 'food' }),
-        storageKey: faker.string.uuid(),
-        fileName: faker.system.fileName(),
-        mimeType: 'image/jpeg',
-        fileSize: faker.number.int({ min: 1000, max: 5000000 }),
+  console.log('Seeding vehicles...');
+  const vehicles = await Promise.all(
+    driverUsers.map((driver) =>
+      db
+        .insert(schema.vehicle)
+        .values({
+          ownerId: driver.id,
+          licensePlate: faker.vehicle.vrm(),
+          type: 'truck', // Matches vehicle_type enum
+          model: faker.vehicle.model(),
+          capacity: 1000,
+          driverName: driver.name,
+        })
+        .returning()
+        .then((res) => res[0]),
+    ),
+  );
+
+  console.log('Seeding auctions...');
+  for (const product of products) {
+    const auction = await db
+      .insert(schema.auction)
+      .values({
+        basePrice: product.price,
+        farmerId: product.farmerId,
+        startTime: new Date(),
+        endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days later
+      })
+      .returning()
+      .then((res) => res[0]);
+
+    await db.insert(schema.auctionItem).values({
+      auctionId: auction.id,
+      productId: product.id,
+      quantity: faker.number.int({ min: 10, max: 100 }),
+      status: 'active',
+    });
+
+    // Seed some bids
+    for (const buyer of buyerUsers) {
+      await db.insert(schema.bid).values({
+        auctionId: auction.id,
+        buyerId: buyer.id,
+        amount: (
+          Number(product.price) + faker.number.int({ min: 1, max: 50 })
+        ).toString(),
       });
-    }),
-  );
-
-  //vehicle gallery
-  await Promise.all(
-    vehicleIds.map(async (vehicleId) => {
-      await db.insert(schema.media).values({
-        resourceType: 'vehicle_gallery',
-        resourceId: vehicleId,
-        url: faker.image.urlLoremFlickr({ category: 'transport' }),
-        storageKey: faker.string.uuid(),
-        fileName: faker.system.fileName(),
-        mimeType: 'image/jpeg',
-        fileSize: faker.number.int({ min: 1000, max: 5000000 }),
-      });
-    }),
-  );
-
-  //delivery
-  await Promise.all(
-    Array.from({ length: 50 }).map(async () => {
-      const vehicleId = faker.helpers.arrayElement(vehicleIds);
-      const delivery = await db
-        .insert(schema.delivery)
-        .values({
-          vehicleId,
-          deliveryStatus: faker.helpers.arrayElement([
-            'pending',
-            'delivered',
-            'cancelled',
-          ]),
-          deliveryDate: faker.date.future(),
-        })
-        .returning();
-
-      const itemsCount = faker.number.int({ min: 1, max: 5 });
-      for (let i = 0; i < itemsCount; i++) {
-        await db.insert(schema.deliveryItem).values({
-          deliveryId: delivery[0].id,
-          productId: faker.helpers.arrayElement(productIds),
-          quantity: faker.number.int({ min: 1, max: 100 }),
-          note: faker.lorem.sentence(),
-        });
-      }
-    }),
-  );
-
-  //auction
-  const auctionIds = await Promise.all(
-    Array.from({ length: 20 }).map(async () => {
-      const startTime = faker.date.future();
-      const endTime = faker.date.soon({ refDate: startTime });
-      const auction = await db
-        .insert(schema.auction)
-        .values({
-          basePrice: faker.number.float({
-            min: 10,
-            max: 1000,
-            fractionDigits: 2,
-          }),
-          startTime,
-          endTime,
-        })
-        .returning();
-      return auction[0].id;
-    }),
-  );
-
-  //auction item
-  const auctionItemIds: number[] = [];
-  for (const auctionId of auctionIds) {
-    const itemsCount = faker.number.int({ min: 1, max: 5 });
-    for (let i = 0; i < itemsCount; i++) {
-      const productId = faker.helpers.arrayElement(productIds);
-      const auctionItem = await db
-        .insert(schema.auctionItem)
-        .values({
-          auctionId,
-          productId,
-          quantity: faker.number.int({ min: 1, max: 50 }),
-          status: 'pending',
-          description: faker.commerce.productDescription(),
-        })
-        .returning();
-      auctionItemIds.push(auctionItem[0].id);
     }
   }
 
-  //bid
-  for (const auctionId of auctionIds) {
-    const bidCount = faker.number.int({ min: 1, max: 10 });
-    for (let i = 0; i < bidCount; i++) {
-      await db.insert(schema.bid).values({
-        auctionId,
-        buyerId: faker.helpers.arrayElement(userIds),
-        amount: faker.number.float({ min: 10, max: 2000, fractionDigits: 2 }),
-        note: faker.lorem.sentence(),
+  console.log('Seeding deliveries...');
+  for (let i = 0; i < 3; i++) {
+    const delivery = await db
+      .insert(schema.delivery)
+      .values({
+        vehicleId: vehicles[0].id,
+        driverId: driverUsers[0].id,
+        deliveryStatus: 'pending',
+      })
+      .returning()
+      .then((res) => res[0]);
+
+    await db.insert(schema.deliveryItem).values({
+      deliveryId: delivery.id,
+      productId: products[0].id,
+      quantity: 5,
+    });
+  }
+
+  console.log('Seeding media resources...');
+
+  // 1. Seed User Profile Pictures
+  for (const user of users) {
+    await db.insert(schema.media).values({
+      resourceType: 'user_profile',
+      resourceId: user.id as any, // Cast to any if UUID/Text mismatch in Drizzle
+      url: faker.image.avatar(),
+      storageKey: `profiles/${user.id}.jpg`,
+      fileName: 'avatar.jpg',
+      mimeType: 'image/jpeg',
+      fileSize: 102400,
+    });
+  }
+
+  // 2. Seed Product Gallery (Multiple images per product)
+  for (const product of products) {
+    const imagesCount = faker.number.int({ min: 1, max: 3 });
+
+    for (let i = 0; i < imagesCount; i++) {
+      await db.insert(schema.media).values({
+        resourceType: 'product_gallery',
+        resourceId: product.id,
+        url: faker.image.urlPicsumPhotos(),
+        storageKey: `products/${product.id}-${i}.jpg`,
+        fileName: `product_${i}.jpg`,
+        mimeType: 'image/jpeg',
+        fileSize: 512000,
+        displayOrder: i,
       });
     }
+  }
+
+  // 3. Seed Vehicle Gallery
+  for (const vehicle of vehicles) {
+    await db.insert(schema.media).values({
+      resourceType: 'vehicle_gallery',
+      resourceId: vehicle.id,
+      url: faker.image.urlPicsumPhotos(),
+      storageKey: `vehicles/${vehicle.id}.jpg`,
+      fileName: 'vehicle.jpg',
+      mimeType: 'image/jpeg',
+      fileSize: 800000,
+    });
   }
 }
 

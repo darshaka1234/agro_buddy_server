@@ -1,18 +1,30 @@
+
+CREATE TABLE "roles" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"name" varchar(20) NOT NULL,
+	CONSTRAINT "roles_name_unique" UNIQUE("name")
+);
 --> statement-breakpoint
 CREATE TABLE "users" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "users_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"email" varchar(255) NOT NULL,
-	"password" varchar(255) NOT NULL,
-	"role" "role" DEFAULT 'guest' NOT NULL,
-	"created_at" timestamp DEFAULT now(),
-	"updated_at" timestamp DEFAULT now(),
-	"deleted_at" timestamp,
+	"id" text PRIMARY KEY NOT NULL,
+	"email" text NOT NULL,
+	"email_verified" boolean DEFAULT false NOT NULL,
+	"name" text NOT NULL,
+	"image" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
+CREATE TABLE "user_roles" (
+	"user_id" text NOT NULL,
+	"role_id" uuid NOT NULL,
+	CONSTRAINT "user_roles_user_id_role_id_pk" PRIMARY KEY("user_id","role_id")
+);
+--> statement-breakpoint
 CREATE TABLE "profiles" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "profiles_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"user_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" text NOT NULL,
 	"first_name" varchar(100) NOT NULL,
 	"last_name" varchar(100),
 	"bio" text,
@@ -24,8 +36,8 @@ CREATE TABLE "profiles" (
 );
 --> statement-breakpoint
 CREATE TABLE "products" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "products_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"farmer_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"farmer_id" text NOT NULL,
 	"name" varchar(255) NOT NULL,
 	"description" text,
 	"price" numeric(10, 2) NOT NULL,
@@ -37,15 +49,15 @@ CREATE TABLE "products" (
 );
 --> statement-breakpoint
 CREATE TABLE "vehicles" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "vehicles_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"owner_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"owner_id" text NOT NULL,
 	"license_plate" varchar(50) NOT NULL,
 	"image_url" text DEFAULT 'https://cdn-icons-png.flaticon.com/512/149/149071.png' NOT NULL,
 	"type" "vehicle_type" NOT NULL,
 	"model" varchar(100) NOT NULL,
 	"capacity" integer,
 	"driver_name" varchar(100),
-	"driver_contact" varchar(20),
+	"driver_contact" varchar(100),
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now(),
 	"deleted_at" timestamp,
@@ -53,18 +65,19 @@ CREATE TABLE "vehicles" (
 );
 --> statement-breakpoint
 CREATE TABLE "deliveries" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "deliveries_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"delivery_status" "delivery_status" DEFAULT 'pending',
-	"vehicle_id" integer NOT NULL,
+	"vehicle_id" uuid NOT NULL,
+	"driver_id" text NOT NULL,
 	"delivery_date" timestamp,
 	"created_at" timestamp DEFAULT now(),
 	"updated_at" timestamp DEFAULT now()
 );
 --> statement-breakpoint
 CREATE TABLE "delivery_items" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "delivery_items_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"delivery_id" integer NOT NULL,
-	"product_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"delivery_id" uuid NOT NULL,
+	"product_id" uuid NOT NULL,
 	"quantity" integer NOT NULL,
 	"note" text,
 	"created_at" timestamp DEFAULT now(),
@@ -73,9 +86,9 @@ CREATE TABLE "delivery_items" (
 );
 --> statement-breakpoint
 CREATE TABLE "media" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "media_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"resource_type" "media_resource_type" NOT NULL,
-	"resource_id" integer NOT NULL,
+	"resource_id" uuid NOT NULL,
 	"url" text NOT NULL,
 	"storage_key" text NOT NULL,
 	"file_name" varchar(255),
@@ -89,10 +102,11 @@ CREATE TABLE "media" (
 );
 --> statement-breakpoint
 CREATE TABLE "auctions" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "auctions_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"base_price" numeric(10, 2) NOT NULL,
 	"current_price" numeric(10, 2),
-	"winning_bid_id" integer,
+	"winning_bid_id" uuid,
+	"farmer_id" text,
 	"start_time" timestamp NOT NULL,
 	"end_time" timestamp,
 	"created_at" timestamp DEFAULT now(),
@@ -100,9 +114,9 @@ CREATE TABLE "auctions" (
 );
 --> statement-breakpoint
 CREATE TABLE "auction_items" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "auction_items_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"auction_id" integer NOT NULL,
-	"product_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"auction_id" uuid NOT NULL,
+	"product_id" uuid NOT NULL,
 	"status" "auction_status" DEFAULT 'pending',
 	"description" text,
 	"quantity" integer NOT NULL,
@@ -112,9 +126,9 @@ CREATE TABLE "auction_items" (
 );
 --> statement-breakpoint
 CREATE TABLE "bids" (
-	"id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY (sequence name "bids_id_seq" INCREMENT BY 1 MINVALUE 1 MAXVALUE 2147483647 START WITH 1 CACHE 1),
-	"auction_id" integer NOT NULL,
-	"buyer_id" integer NOT NULL,
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"auction_id" uuid NOT NULL,
+	"buyer_id" text NOT NULL,
 	"amount" numeric(10, 2) NOT NULL,
 	"note" text,
 	"created_at" timestamp DEFAULT now(),
@@ -122,13 +136,17 @@ CREATE TABLE "bids" (
 	"deleted_at" timestamp
 );
 --> statement-breakpoint
+ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_roles" ADD CONSTRAINT "user_roles_role_id_roles_id_fk" FOREIGN KEY ("role_id") REFERENCES "public"."roles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "products" ADD CONSTRAINT "products_farmer_id_users_id_fk" FOREIGN KEY ("farmer_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "vehicles" ADD CONSTRAINT "vehicles_owner_id_users_id_fk" FOREIGN KEY ("owner_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "deliveries" ADD CONSTRAINT "deliveries_vehicle_id_vehicles_id_fk" FOREIGN KEY ("vehicle_id") REFERENCES "public"."vehicles"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "deliveries" ADD CONSTRAINT "deliveries_driver_id_users_id_fk" FOREIGN KEY ("driver_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "delivery_items" ADD CONSTRAINT "delivery_items_delivery_id_deliveries_id_fk" FOREIGN KEY ("delivery_id") REFERENCES "public"."deliveries"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "delivery_items" ADD CONSTRAINT "delivery_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auctions" ADD CONSTRAINT "auctions_winning_bid_id_bids_id_fk" FOREIGN KEY ("winning_bid_id") REFERENCES "public"."bids"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "auctions" ADD CONSTRAINT "auctions_farmer_id_users_id_fk" FOREIGN KEY ("farmer_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auction_items" ADD CONSTRAINT "auction_items_auction_id_auctions_id_fk" FOREIGN KEY ("auction_id") REFERENCES "public"."auctions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "auction_items" ADD CONSTRAINT "auction_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "bids" ADD CONSTRAINT "bids_auction_id_auctions_id_fk" FOREIGN KEY ("auction_id") REFERENCES "public"."auctions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
