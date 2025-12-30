@@ -9,6 +9,8 @@ import { BidModule } from './bid/bid.module';
 import { OrderModule } from './order/order.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { AuctionController } from './nest/auction/auction.controller';
+import { VehicleModule } from './vehicle/vehicle.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { AuctionController } from './nest/auction/auction.controller';
     BidModule,
     OrderModule,
     DeliveryModule,
+    VehicleModule,
+    MediaModule,
   ],
   controllers: [AuctionController],
 })
