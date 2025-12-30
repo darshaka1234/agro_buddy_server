@@ -5,22 +5,22 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1766940034738,
-      "tag": "0000_superb_molten_man",
+      "when": 1767087608941,
+      "tag": "0000_set_enums",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "7",
-      "when": 1766942465843,
-      "tag": "0001_profile_init",
+      "when": 1767087789030,
+      "tag": "0001_init_schemas",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "7",
-      "when": 1766942909200,
-      "tag": "0002_new_method",
+      "when": 1767088017430,
+      "tag": "0002_increase_driver_contact_limit",
       "breakpoints": true
     }
   ]

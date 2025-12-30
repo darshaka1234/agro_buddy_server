@@ -31,7 +31,7 @@ export const vehicle = pgTable('vehicles', {
   model: varchar('model', { length: 100 }).notNull(),
   capacity: integer('capacity'),
   driverName: varchar('driver_name', { length: 100 }),
-  driverContact: varchar('driver_contact', { length: 20 }),
+  driverContact: varchar('driver_contact', { length: 100 }),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
   deletedAt: timestamp('deleted_at'),
